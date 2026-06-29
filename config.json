@@ -1,0 +1,47 @@
+{
+  "_comment": "SVADEZI live pricing config. Non-sensitive tunables live here (safe for a public repo). Secrets (Shopify token, metals API key) come from env / GitHub Secrets.",
+
+  "provider": "goldapi",
+  "currency": "INR",
+
+  "making_charge_per_g": {
+    "gold": 1500,
+    "silver": 800
+  },
+  "finishing_charge": 800,
+
+  "diamond_rate": {
+    "lab": 35000,
+    "natural_small": 135000,
+    "natural_large": 185000,
+    "natural_threshold_ct": 0.15,
+    "natural_threshold_basis": "total"
+  },
+
+  "gst_multiplier": 1.03,
+  "compare_at_multiplier": 1.50,
+  "rounding_step": 10,
+
+  "metal_rate_multiplier": 1.0,
+  "silver_purity": 0.925,
+  "karat_purity": { "9K": 0.375, "14K": 0.585, "18K": 0.75, "22K": 0.916, "24K": 1.0 },
+
+  "default_stone_type": "lab",
+  "zero_carat_behavior": "skip",
+
+  "metafields": {
+    "metal_weight_g": { "namespace": "custom", "key": "metal_weight_g" },
+    "diamond_weight_ct": { "namespace": "custom", "key": "diamond_weight_ct" }
+  },
+
+  "rate_metaobject": {
+    "enabled": true,
+    "type": "metal_rate",
+    "handle": "current"
+  },
+
+  "shopify_api_version": "2024-10",
+  "bulk_chunk_size": 250,
+  "max_workers": 8,
+  "only_active_products": true
+}

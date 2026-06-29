@@ -1,0 +1,41 @@
+name: Manual Price Update
+
+# Manually-triggered run where YOU supply the gold/silver rates (no API call).
+# Use when goldapi is down/over quota, or to set a specific rate.
+on:
+  workflow_dispatch:
+    inputs:
+      gold_24k:
+        description: "Gold 24K rate (INR per gram)"
+        required: true
+        type: string
+      silver_999:
+        description: "Silver 999 rate (INR per gram)"
+        required: true
+        type: string
+      dry_run:
+        description: "Dry run (compute only, no writes)"
+        type: boolean
+        default: false
+
+jobs:
+  manual-update:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: svadezi-price-update
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run price engine (manual rates)
+        env:
+          SHOPIFY_STORE: ${{ secrets.SHOPIFY_STORE }}
+          SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
+        run: |
+          python price_engine.py \
+            --gold-24k "${{ inputs.gold_24k }}" \
+            --silver-999 "${{ inputs.silver_999 }}" \
+            ${{ inputs.dry_run && '--dry-run' || '' }}

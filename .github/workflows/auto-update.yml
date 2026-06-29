@@ -1,0 +1,35 @@
+name: Auto Price Update
+
+# Automatic daily run using LIVE metal rates from the provider (goldapi.io).
+# Schedule is in UTC. 18:30 UTC == 00:00 IST (midnight India).
+# To change the time: edit the cron below (https://crontab.guru). IST = UTC + 5:30.
+on:
+  schedule:
+    - cron: "30 18 * * *"      # 00:00 IST daily
+  workflow_dispatch:            # allow manual "Run workflow" with live rates too
+    inputs:
+      dry_run:
+        description: "Dry run (compute only, no writes)"
+        type: boolean
+        default: false
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: svadezi-price-update    # never run two price updates at once
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run price engine (live rates)
+        env:
+          SHOPIFY_STORE: ${{ secrets.SHOPIFY_STORE }}
+          SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
+          METALS_API_KEY: ${{ secrets.METALS_API_KEY }}
+          METALS_API_KEY_2: ${{ secrets.METALS_API_KEY_2 }}
+        run: |
+          python price_engine.py ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
