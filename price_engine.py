@@ -60,14 +60,14 @@ def load_config(path):
         return json.load(f)
 
 
-def collect_api_keys():
-    """Gather metals API keys for fallback, in order:
-    METALS_API_KEY (may be comma-separated), then METALS_API_KEY_2..5."""
+def collect_api_keys(env_prefix="METALS_API_KEY"):
+    """Gather API keys for fallback, in order:
+    <env_prefix> (may be comma-separated), then <env_prefix>_2..5."""
     keys = []
-    primary = os.environ.get("METALS_API_KEY", "")
+    primary = os.environ.get(env_prefix, "")
     keys += [k.strip() for k in primary.split(",")]
     for n in range(2, 6):
-        v = os.environ.get(f"METALS_API_KEY_{n}", "")
+        v = os.environ.get(f"{env_prefix}_{n}", "")
         if v:
             keys.append(v.strip())
     seen, out = set(), []
@@ -292,12 +292,25 @@ def run(args):
         rates = {"gold_24k": args.gold_24k, "silver_999": args.silver_999, "source": "manual"}
         log.info(f"MANUAL rates: gold_24k={rates['gold_24k']} silver_999={rates['silver_999']}")
     else:
-        provider = get_provider(cfg["provider"])
-        keys = collect_api_keys()
+        provider_name = cfg["provider"]
+        currency = cfg.get("currency", "INR")
+        city = cfg.get("rate_city", "mumbai")
+        # provider-specific key env: RapidAPI India uses RAPIDAPI_KEY, others METALS_API_KEY
+        key_env = "RAPIDAPI_KEY" if provider_name == "rapidapi_india" else "METALS_API_KEY"
+        keys = collect_api_keys(key_env)
         if not keys:
-            log.error("No metals API keys (set METALS_API_KEY, optionally METALS_API_KEY_2…)"); sys.exit(1)
-        log.info(f"Using {len(keys)} metals API key(s) with fallback")
-        rates = provider(keys, cfg.get("currency", "INR"))
+            log.error(f"No API keys (set {key_env}, optionally {key_env}_2…)"); sys.exit(1)
+        log.info(f"Provider '{provider_name}' using {len(keys)} key(s) from {key_env} with fallback")
+        try:
+            rates = get_provider(provider_name)(keys, currency, city=city)
+        except Exception as e:
+            # automatic fallback to metals.dev (global spot) if the primary provider fails
+            fb_keys = collect_api_keys("METALS_API_KEY")
+            if provider_name != "metalsdev" and fb_keys:
+                log.warning(f"Provider '{provider_name}' failed ({e}); falling back to metalsdev")
+                rates = get_provider("metalsdev")(fb_keys, currency, city=city)
+            else:
+                raise
         log.info(f"LIVE rates [{rates['source']}]: gold_24k={rates['gold_24k']:.2f} "
                  f"silver_999={rates['silver_999']:.2f}")
 

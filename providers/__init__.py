@@ -10,10 +10,12 @@ function and register it in PROVIDERS below. Then set "provider" in config.json.
 
 from . import goldapi
 from . import metalsdev
+from . import rapidapi_india
 
 PROVIDERS = {
     "goldapi": goldapi.fetch_rates,
     "metalsdev": metalsdev.fetch_rates,
+    "rapidapi_india": rapidapi_india.fetch_rates,
 }
 
 

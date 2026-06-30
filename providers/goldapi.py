@@ -37,7 +37,7 @@ def _fetch_one(api_key, currency):
             "raw": {"XAU": gold, "XAG": silver}}
 
 
-def fetch_rates(api_keys, currency="INR"):
+def fetch_rates(api_keys, currency="INR", **_):
     """api_keys: a list (or comma-separated string) of goldapi keys, tried in order."""
     if isinstance(api_keys, str):
         api_keys = api_keys.split(",")

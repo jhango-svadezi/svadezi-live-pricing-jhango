@@ -62,13 +62,21 @@ python setup_metaobject.py
 |---|---|
 | `SHOPIFY_STORE` | `svadezi.myshopify.com` |
 | `SHOPIFY_ACCESS_TOKEN` | `shpat_…` |
-| `METALS_API_KEY` | `metals.dev` key (provider `metalsdev`) — **free tier 100 req/month**, fetched once per run |
-| `METALS_API_KEY_2` | optional fallback key |
+| `RAPIDAPI_KEY` | RapidAPI key for **"Gold Silver Rates India"** (active provider `rapidapi_india`). Returns real Indian **retail** rates (pre-GST) — one call/run, both metals. |
+| `METALS_API_KEY` | **Fallback only** — metals.dev key (provider `metalsdev`, global spot). Used automatically if RapidAPI fails. |
+| `METALS_API_KEY_2` | optional secondary fallback key |
 
-> **Multi-key fallback:** the engine tries `METALS_API_KEY` first; if it's
-> quota-exceeded/fails it falls back to `METALS_API_KEY_2` (and `_3`…`_5`).
-> `METALS_API_KEY` may also be a comma-separated list. **Keys are used
-> server-side only — never in the theme/browser.**
+> **Why RapidAPI India, not spot:** global spot APIs (metals.dev, goldapi) return
+> the international price ×FX — ~13% below Indian retail because they omit import
+> duty + premium. RapidAPI India returns the actual Indian retail rate (pre-GST),
+> so the engine's `×1.03` GST reproduces the on-the-street price. City is set by
+> `rate_city` in `config.json` (default `mumbai`).
+>
+> **Fallback chain:** primary provider (`config.json` → `provider`) using its key
+> env (`RAPIDAPI_KEY` for rapidapi_india, else `METALS_API_KEY`); on failure the
+> engine auto-falls back to **metals.dev** (`METALS_API_KEY`, then `_2`…`_5`).
+> Any key env may be a comma-separated list. **Keys are server-side only — never
+> in the theme/browser.**
 
 ---
 

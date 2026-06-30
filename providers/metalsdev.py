@@ -17,7 +17,7 @@ import requests
 BASE = "https://api.metals.dev/v1/latest"
 
 
-def fetch_rates(api_keys, currency="INR"):
+def fetch_rates(api_keys, currency="INR", **_):
     if isinstance(api_keys, str):
         api_keys = api_keys.split(",")
     keys = [k.strip() for k in (api_keys or []) if k and k.strip()]
