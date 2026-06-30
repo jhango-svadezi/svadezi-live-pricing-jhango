@@ -336,7 +336,9 @@ def run(args):
         price, compare = compute_price(grams, carat, metal, purity, stone, rates, cfg)
 
         by_product.setdefault(prod["id"], []).append(
-            {"id": v["id"], "price": f"{price}.00", "compareAtPrice": f"{compare}.00"})
+            {"id": v["id"], "price": f"{price}.00", "compareAtPrice": f"{compare}.00",
+             "inventoryPolicy": "CONTINUE",                 # continue selling when out of stock
+             "inventoryItem": {"tracked": True}})           # track quantity
         # Full per-variant map for the theme (one metafield bypasses the 250 Liquid/AJAX cap)
         opt_key = "|".join((o.get("value") or "").strip() for o in v.get("selectedOptions", []))
         pricing_map.setdefault(prod["id"], {})[opt_key] = [
