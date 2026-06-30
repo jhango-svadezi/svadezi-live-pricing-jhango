@@ -1,7 +1,7 @@
 {
   "_comment": "SVADEZI live pricing config. Non-sensitive tunables live here (safe for a public repo). Secrets (Shopify token, metals API key) come from env / GitHub Secrets.",
 
-  "provider": "goldapi",
+  "provider": "metalsdev",
   "currency": "INR",
 
   "making_charge_per_g": {

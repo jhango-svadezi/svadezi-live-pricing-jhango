@@ -62,8 +62,8 @@ python setup_metaobject.py
 |---|---|
 | `SHOPIFY_STORE` | `svadezi.myshopify.com` |
 | `SHOPIFY_ACCESS_TOKEN` | `shpat_…` |
-| `METALS_API_KEY` | `goldapi-…-io` (primary) |
-| `METALS_API_KEY_2` | `goldapi-…-io` (fallback, optional) |
+| `METALS_API_KEY` | `metals.dev` key (provider `metalsdev`) — **free tier 100 req/month**, fetched once per run |
+| `METALS_API_KEY_2` | optional fallback key |
 
 > **Multi-key fallback:** the engine tries `METALS_API_KEY` first; if it's
 > quota-exceeded/fails it falls back to `METALS_API_KEY_2` (and `_3`…`_5`).
