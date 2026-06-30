@@ -310,6 +310,7 @@ def run(args):
     # ---- fetch + compute ----
     variants = fetch_variants(shop, cfg)
     by_product = {}
+    pricing_map = {}   # productId -> { "opt1|opt2|opt3": [variantId, price, compare, grams] }
     skipped_no_grams = skipped_inactive = zero_carat = 0
     only_active = cfg.get("only_active_products", True)
 
@@ -336,6 +337,10 @@ def run(args):
 
         by_product.setdefault(prod["id"], []).append(
             {"id": v["id"], "price": f"{price}.00", "compareAtPrice": f"{compare}.00"})
+        # Full per-variant map for the theme (one metafield bypasses the 250 Liquid/AJAX cap)
+        opt_key = "|".join((o.get("value") or "").strip() for o in v.get("selectedOptions", []))
+        pricing_map.setdefault(prod["id"], {})[opt_key] = [
+            int(v["id"].split("/")[-1]), price, compare, round(grams, 4)]
 
     total_variants = sum(len(x) for x in by_product.values())
     log.info(f"Computed prices for {total_variants} variants across {len(by_product)} products "
@@ -379,6 +384,44 @@ def run(args):
                 log.info(f"  pushed {done}/{len(futs)} products (ok={ok} err={err})")
 
     log.info(f"DONE: {ok} products updated, {err} errors, {total_variants} variants priced")
+
+    # ---- write the full variant map to a product metafield (handles >250 variants) ----
+    write_variant_pricing_metafields(shop, {pid: pricing_map[pid] for pid in by_product if pid in pricing_map})
+
+
+METAFIELDS_SET = """
+mutation($mf: [MetafieldsSetInput!]!) {
+  metafieldsSet(metafields: $mf) { userErrors { field message } }
+}
+"""
+
+
+def write_variant_pricing_metafields(shop, pricing_map):
+    """Store each product's full {optionKey: [variantId, price, compare, grams]} map in
+    custom.variant_pricing (JSON). One metafield per product = no 250-variant cap; the
+    theme reads it in Liquid (no Storefront token needed)."""
+    items = list(pricing_map.items())
+    if not items:
+        return
+    ok = err = 0
+    BATCH = 25
+    for i in range(0, len(items), BATCH):
+        mfs = [{
+            "ownerId": pid,
+            "namespace": "custom",
+            "key": "variant_pricing",
+            "type": "json",
+            "value": json.dumps(m, separators=(",", ":")),
+        } for pid, m in items[i:i + BATCH]]
+        try:
+            res = shop.execute(METAFIELDS_SET, {"mf": mfs})["metafieldsSet"]
+            if res["userErrors"]:
+                err += len(mfs); log.error(f"  variant_pricing userErrors: {res['userErrors'][:2]}")
+            else:
+                ok += len(mfs)
+        except Exception as e:
+            err += len(mfs); log.error(f"  variant_pricing batch failed: {e}")
+    log.info(f"variant_pricing metafield written: {ok} products ({err} errors)")
 
 
 def main():
